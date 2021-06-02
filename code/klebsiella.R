@@ -1,5 +1,5 @@
 
-metadata <- read.delim('~/Desktop/active_projects/klebsiella/metadata.tsv', sep='\t', header=TRUE)
+metadata <- read.delim('~/Desktop/repos/Klebsiella_2021/data/metadata.tsv', sep='\t', header=TRUE)
 metadata$study <- NULL
 
 
@@ -12,6 +12,13 @@ srr_files <- c('SRR1720484','SRR1720485','SRR1720486','SRR1720487','SRR1720488',
                'SRR2147287','SRR2147288','SRR2147289','SRR2147290','SRR2147291','SRR2147292','SRR2147293',
                'SRR2147294','SRR2147295','SRR2147296','SRR8260120','SRR8260121','SRR8603247','SRR8603248')
 size <- 20
+flux_samples <- read.delim('~/Desktop/active_projects/klebsiella/data/SRR1720483/flux_samples.tsv', sep='\t', header=TRUE)
+sub_sample <- sample(1:nrow(flux_samples), size, replace=FALSE)
+flux_samples <- flux_samples[sub_sample,]
+flux_samples$sample <- rep('SRR1720483', nrow(flux_samples))
+rownames(flux_samples) <- paste0('SRR1720483_', 1:nrow(flux_samples))
+flux_samples <- as.data.frame(t(flux_samples))
+
 for (x in srr_files) {
   fluxes <- paste0('~/Desktop/active_projects/klebsiella/data/', x, '/flux_samples.tsv')
   fluxes <- read.delim(fluxes, sep='\t', header=TRUE)
@@ -26,6 +33,13 @@ for (x in srr_files) {
 }
 flux_samples <- as.data.frame(t(flux_samples))
 rm(fluxes)
+
+# Remove biomass objective
+flux_samples$BIOMASS_ <- NULL
+
+
+
+
 
 
 # Prep for machine learning
@@ -61,9 +75,8 @@ top_rxns_importance <- all_aucrf$ranking[1:all_aucrf$Kopt]
 rf_rxns <- as.data.frame(cbind(labels(top_rxns_importance), as.vector(top_rxns_importance)))
 colnames(rf_rxns) <- c('id','mda')
 rm(all_aucrf, top_rxns_importance)
-
-
-
+write.table(rf_rxns, file='~/Desktop/repos/Klebsiella_2021/data/invitro_invivo_mda.tsv', 
+            quote=FALSE, sep='\t', row.names=FALSE, col.names=TRUE)
 
 
 
@@ -95,8 +108,8 @@ plot_flux <- function(reaction, rxn_name='test', ymax=20) {
 }
 
 
-png(filename='~/Desktop/active_projects/klebsiella/results/aucrf_mda.png', units='in', width=3.5, height=5, res=300)
-rf_results <- read.delim('~/Desktop/active_projects/klebsiella/data/rf.mda.invitro_invivo.tsv', sep='\t', header=TRUE)
+png(filename='~/Desktop/repos/Klebsiella_2021/results/aucrf_mda.png', units='in', width=3.5, height=5, res=300)
+rf_results <- read.delim('~/Desktop/repos/Klebsiella_2021/data/rf.mda.invitro_invivo.tsv', sep='\t', header=TRUE)
 rf_results <- rf_results[order(rf_results$mda),] 
 rf_results$name <- gsub('_', ' ', rf_results$name)
 par(mar=c(3, 0.5, 0.5, 0.5), mgp=c(1.4, 0.5, 0), xpd=FALSE, lwd=1.7)
@@ -109,7 +122,7 @@ dev.off()
 
 
 
-png(filename='~/Desktop/active_projects/klebsiella/results/VALTA.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/VALTA.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('VALTA', rxn_name='Valine transaminase')
 segments(x0=1, y0=10, x1=2)
@@ -119,7 +132,7 @@ text(x=c(1,2), y=-22.5, labels=c('K. pneumoniae\nin vitro','K. pneumoniae\nin vi
 par(xpd=FALSE)
 dev.off()
 
-png(filename='~/Desktop/active_projects/klebsiella/results/SUCDi.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/SUCDi.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('SUCDi', rxn_name='Succinate dehydrogenase')
 segments(x0=1, y0=15, x1=2)
@@ -129,7 +142,7 @@ text(x=c(1,2), y=-22.5, labels=c('K. pneumoniae\nin vitro','K. pneumoniae\nin vi
 par(xpd=FALSE)
 dev.off()
 
-png(filename='~/Desktop/active_projects/klebsiella/results/FUM.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/FUM.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('FUM', rxn_name='Fumarase')
 segments(x0=1, y0=15, x1=2)
@@ -139,7 +152,7 @@ text(x=c(1,2), y=-22.5, labels=c('K. pneumoniae\nin vitro','K. pneumoniae\nin vi
 par(xpd=FALSE)
 dev.off()
 
-png(filename='~/Desktop/active_projects/klebsiella/results/PDH.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/PDH.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('PDH', rxn_name='Pyruvate dehydrogenase')
 segments(x0=1, y0=15, x1=2)
@@ -149,7 +162,7 @@ text(x=c(1,2), y=-22.5, labels=c('K. pneumoniae\nin vitro','K. pneumoniae\nin vi
 par(xpd=FALSE)
 dev.off()
 
-png(filename='~/Desktop/active_projects/klebsiella/results/ADK1.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/ADK1.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('ADK1', rxn_name='Adenylate kinase', ymax=5)
 segments(x0=1, y0=2.5, x1=2)
@@ -159,7 +172,7 @@ text(x=c(1,2), y=-5.6, labels=c('K. pneumoniae\nin vitro','K. pneumoniae\nin viv
 par(xpd=FALSE)
 dev.off()
 
-png(filename='~/Desktop/active_projects/klebsiella/results/PPK.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/PPK.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('PPK', rxn_name='Polyphosphate kinase', ymax=5)
 segments(x0=1, y0=2.5, x1=2)
@@ -169,7 +182,7 @@ text(x=c(1,2), y=-5.6, labels=c('K. pneumoniae\nin vitro','K. pneumoniae\nin viv
 par(xpd=FALSE)
 dev.off()
 
-png(filename='~/Desktop/active_projects/klebsiella/results/EX_arg__L_e.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/EX_arg__L_e.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('EX_arg__L_e', rxn_name='L-Arginine exchange', ymax=5)
 segments(x0=1, y0=2.5, x1=2) 
@@ -179,7 +192,7 @@ text(x=c(1,2), y=-5.6, labels=c('K. pneumoniae\nin vitro','K. pneumoniae\nin viv
 par(xpd=FALSE)
 dev.off()
 
-png(filename='~/Desktop/active_projects/klebsiella/results/MDH.png', 
+png(filename='~/Desktop/repos/Klebsiella_2021/results/MDH.png', 
     units='in', width=3, height=4, res=300)
 plot_flux('MDH', rxn_name='Malate dehydrogenase', ymax=10)
 segments(x0=1, y0=8, x1=2)
@@ -201,7 +214,7 @@ dev.off()
 
 
 
-metadata <- read.delim('~/Desktop/active_projects/klebsiella/metadata.tsv', sep='\t', header=TRUE)
+metadata <- read.delim('~/Desktop/repos/Klebsiella_2021/data/metadata.tsv', sep='\t', header=TRUE)
 metadata$study <- NULL
 
 srr_files <- c('SRR1720484','SRR1720485','SRR1720486','SRR1720487','SRR1720488','SRR1720489',
@@ -234,6 +247,11 @@ for (x in srr_files) {
 flux_samples <- as.data.frame(t(flux_samples))
 rm(fluxes, size, sub_sample)
 
+# Remove biomass objective
+flux_samples$BIOMASS_ <- NULL
+
+
+library(vegan)
 samples <- flux_samples$sample
 flux_samples$sample <- NULL
 flux_samples[] <- lapply(flux_samples, function(x) {
@@ -271,14 +289,14 @@ flux_nmds$ADK1 <- NULL
 invivo_nmds_points <- subset(flux_nmds, type == 'in_vivo')
 invitro_nmds_points <- subset(flux_nmds, type == 'in_vitro')
 
-
-pdf(file='~/Desktop/active_projects/klebsiella/flux_samples_nmds.pdf', width=4.5, height=4)
+library(scales)
+pdf(file='~/Desktop/repos/Klebsiella_2021/results/flux_samples_nmds.pdf', width=4.5, height=4)
 par(mar=c(3.5,3.5,0.5,0.5), las=1, mgp=c(2.2,0.7,0), lwd=2)
 plot(x=flux_nmds$MDS1, y=flux_nmds$MDS2, xlim=c(-0.015,0.015), ylim=c(-0.008, 0.008),
      xlab='NMDS Axis 1', ylab='NMDS Axis 2', pch=19, cex.lab=1.1, cex=0, cex.axis=0.9)
 points(x=invitro_nmds_points$MDS1, y=invitro_nmds_points$MDS2, bg=alpha('darkcyan',0.8), pch=21, cex=1.7)
 points(x=invivo_nmds_points$MDS1, y=invivo_nmds_points$MDS2, bg=alpha('white',0.8), pch=21, cex=1.7)
-legend('topright', legend=c('in vivo','in vitro'), text.font=3,
+legend('topright', legend=c('in vivo','in vitro'), text.font=3, bg='white',
        pt.bg=c('white', 'darkcyan'), pch=21, pt.cex=1.6, cex=1.1, box.lwd=2)
 text(x=0.006, y=-0.0075, as.expression(bquote(paste(italic('p'),'-value = 0.01 **'))), cex=0.9, pos=4)
 box()
