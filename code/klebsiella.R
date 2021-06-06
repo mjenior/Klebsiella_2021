@@ -42,6 +42,7 @@ flux_samples$BIOMASS_ <- NULL
 
 
 
+
 # Prep for machine learning
 flux_samples$type <- metadata$type[match(flux_samples$sample, metadata$id)]
 metadata <- flux_samples[, c('sample', 'type')]
@@ -251,12 +252,21 @@ rm(fluxes, size, sub_sample)
 flux_samples$BIOMASS_ <- NULL
 
 
-library(vegan)
+
+
 samples <- flux_samples$sample
 flux_samples$sample <- NULL
 flux_samples[] <- lapply(flux_samples, function(x) {
   if(is.factor(x)) as.numeric(as.character(x)) else x})
 flux_samples <- flux_samples + abs(min(flux_samples))
+
+
+library(ape)
+mod <- rda(flux_samples, scale=TRUE)
+biplot(mod, scaling=3, type=c('text', 'points'))
+
+
+library(vegan)
 flux_dist <- vegdist(flux_samples, method='bray')
 flux_samples$sample <- samples
 rm(samples)
