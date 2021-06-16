@@ -29,69 +29,149 @@ for (x in srr_files) {
   rownames(flux_samples) <- flux_samples$Row.names
   flux_samples$Row.names <- NULL
 }
-flux_samples <- as.data.frame(t(flux_samples))
 rm(fluxes, size, sub_sample)
 
-# Remove biomass objective
+# Format and remove biomass objective
+flux_samples <- as.data.frame(t(flux_samples))
 flux_samples$BIOMASS_ <- NULL
-
-
-
-
+flux_samples <- merge(flux_samples, metadata, by.x='sample', by.y='id')
 samples <- flux_samples$sample
 flux_samples$sample <- NULL
+flux_groups <- as.factor(flux_samples$type)
+flux_samples$type <- NULL
 flux_samples[] <- lapply(flux_samples, function(x) {
   if(is.factor(x)) as.numeric(as.character(x)) else x})
-flux_samples <- flux_samples + abs(min(flux_samples))
+
+# Limit features with machine learning
+library(randomForest)
+rf_obj <- randomForest(flux_groups ~ ., data=flux_samples, importance=TRUE, err.rate=TRUE, ntree=1500, mtry=15)
+rf_obj <- importance(rf_obj, type=1, scale=TRUE)
+rf_obj <- as.data.frame(subset(rf_obj, rf_obj > (abs(min(rf_obj)))))
+flux_samples <- flux_samples[, rownames(rf_mda)]
+rm(rf_obj, flux_groups)
 
 
-library(ape)
-mod <- rda(flux_samples, scale=TRUE)
-biplot(mod, scaling=3, type=c('text', 'points'))
 
 
+# Calculate dissimilarities and PCoA axes
 library(vegan)
+library(ape)
+flux_samples <- flux_samples + abs(min(flux_samples))
 flux_dist <- vegdist(flux_samples, method='bray')
-flux_samples$sample <- samples
-rm(samples)
-
-test <- merge(x=metadata, y=flux_samples, by.x='id', by.y='sample')
-test$id <- NULL
-test$sample <- NULL
-rownames(test) <- rownames(flux_samples)
-nmds_pval <- adonis(flux_dist ~ type, data=test, perm=99, method='bray')
-nmds_pval <- nmds_pval$aov.tab[[6]][1]
-nmds_pval <- as.character(round(nmds_pval, 3))
-test <- test[,c('type','ADK1')]
-
-flux_nmds <- as.data.frame(metaMDS(flux_dist, k=2, trymax=25)$points)
-flux_x <- (abs(max(flux_nmds$MDS1)) - abs(min(flux_nmds$MDS1))) / 2
-flux_y <- (abs(max(flux_nmds$MDS2)) - abs(min(flux_nmds$MDS2))) / 2
-flux_nmds$MDS1 <- flux_nmds$MDS1 - flux_x
-flux_nmds$MDS2 <- flux_nmds$MDS2 - flux_y
-flux_x <- max(abs(max(flux_nmds$MDS1)), abs(min(flux_nmds$MDS1))) + 0.01
-flux_y <- max(abs(max(flux_nmds$MDS2)), abs(min(flux_nmds$MDS2))) + 0.01
+flux_pcoa_model <- pcoa(flux_dist, correction='none', rn=NULL)
 
 
 
-flux_nmds <- merge(test, flux_nmds, by='row.names')
-rownames(flux_nmds) <- flux_nmds$Row.names
-flux_nmds$Row.names <- NULL
-flux_nmds$ADK1 <- NULL
+
+flux_pcoa_points <- as.data.frame(flux_pcoa_model$vectors[,c(1,2)])
+flux_pcoa_values <- flux_pcoa_model$values
+flux_pcoa_values <- flux_pcoa_values$Relative_eig[c(1,2)] * 100.0
+colnames(flux_pcoa_points) <- round(flux_pcoa_values, digits=2)
+rm(flux_pcoa_model, flux_pcoa_values)
 
 
-invivo_nmds_points <- subset(flux_nmds, type == 'in_vivo')
-invitro_nmds_points <- subset(flux_nmds, type == 'in_vitro')
+# Test difference
+pval <- adonis(flux_dist ~ samples, flux_samples, perm=999)$aov.tab[[6]][1]
 
+
+
+# Center points
+flux_x <- (abs(max(flux_pcoa_points[,1])) - abs(min(flux_pcoa_points[,1]))) / 2
+flux_y <- (abs(max(flux_pcoa_points[,2])) - abs(min(flux_pcoa_points[,2]))) / 2
+flux_pcoa_points[,1] <- flux_pcoa_points[,1] - flux_x
+flux_pcoa_points[,2] <- flux_pcoa_points[,2] - flux_y
+flux_xlim <- max(abs(max(flux_pcoa_points[,1])), abs(min(flux_pcoa_points[,1]))) + 0.01
+flux_ylim <- max(abs(max(flux_pcoa_points[,2])), abs(min(flux_pcoa_points[,2]))) + 0.01
+
+# Combine with metadata
+flux_pcoa_points$samples <- samples
+flux_pcoa_points <- merge(flux_pcoa_points, metadata, by.x='samples', by.y='id')
+
+# Subset points
+clinical_pcoa_points <- subset(flux_pcoa_points, type == 'clinical')
+laboratory_pcoa_points <- subset(flux_pcoa_points, type == 'laboratory')
+
+# Prep for plotting
+flux_pcoa_points[,2] <- flux_pcoa_points[,2] * -1
+x_axis_lab <- gsub('X', '', as.character(colnames(flux_pcoa_points)[2]))
+x_axis_lab <- paste ('PC1 (', x_axis_lab, '%)', sep='')
+y_axis_lab <- gsub('X', '', as.character(colnames(flux_pcoa_points)[3]))
+y_axis_lab <- paste ('PC2 (', y_axis_lab, '%)', sep='')
+
+# Generate figure
+clinical_col <- 'red2'
+laboratory_col <- 'blue3'
 library(scales)
-pdf(file='~/Desktop/repos/Klebsiella_2021/results/flux_samples_nmds.pdf', width=4.5, height=4)
-par(mar=c(3.5,3.5,0.5,0.5), las=1, mgp=c(2.2,0.7,0), lwd=2)
-plot(x=flux_nmds$MDS1, y=flux_nmds$MDS2, xlim=c(-0.015,0.015), ylim=c(-0.008, 0.008),
-     xlab='NMDS Axis 1', ylab='NMDS Axis 2', pch=19, cex.lab=1.1, cex=0, cex.axis=0.9)
-points(x=invitro_nmds_points$MDS1, y=invitro_nmds_points$MDS2, bg=alpha('darkcyan',0.8), pch=21, cex=1.7)
-points(x=invivo_nmds_points$MDS1, y=invivo_nmds_points$MDS2, bg=alpha('white',0.8), pch=21, cex=1.7)
-legend('topright', legend=c('in vivo','in vitro'), text.font=3, bg='white',
-       pt.bg=c('white', 'darkcyan'), pch=21, pt.cex=1.6, cex=1.1, box.lwd=2)
-text(x=0.006, y=-0.0075, as.expression(bquote(paste(italic('p'),'-value = 0.01 **'))), cex=0.9, pos=4)
+
+pdf(file='~/Desktop/repos/Klebsiella_2021/results/flux_samples_pcoa.pdf', width=4.5, height=4)
+par(mar=c(4.1,4.1,1,1), las=1, mgp=c(2.9,0.7,0), lwd=2, lick.lwd=2)
+plot(x=flux_pcoa_points[,2], y=flux_pcoa_points[,3], xlim=c(-0.01,0.01), ylim=c(-0.01,0.01),
+     xlab=x_axis_lab, ylab=y_axis_lab, pch=19, cex.lab=1.4, cex=0)
+points(x=laboratory_pcoa_points[,2], y=laboratory_pcoa_points[,3], bg=alpha(laboratory_col,0.75), pch=21, cex=2.4)
+points(x=clinical_pcoa_points[,2], y=clinical_pcoa_points[,3], bg=alpha(clinical_col,0.75), pch=21, cex=2.4)
+legend('topleft', legend=c('Clinical isolates','Laboratory isolates'), 
+       pt.bg=c(clinical_col,laboratory_col), pch=21, pt.cex=2, pt.lwd=1.5, cex=1.1, bty='n')
+legend('bottomright', legend=as.expression(bquote(paste(italic('p'),'-value = 0.001***'))), 
+       pch=1, cex=1.2, pt.cex=0, bty='n')
 box()
+
+# Biplot vectors
+
+
+
+
 dev.off()
+
+
+
+
+
+
+
+
+flux_samples$sample <- NULL
+pca_mod <- rda(flux_samples, scale=TRUE)
+
+
+
+biplot(pca_mod, scaling=3, type=c('text','points'))
+
+
+pcoa_vectors <- scores(pca_mod, choices=1:2, display='sp') 
+
+pcoa_magnitude <- as.vector(apply(pcoa_vectors, 1, function (x) sqrt((abs(x[1])^2) + (abs(x[2])^2))))
+pcoa_vectors <- as.data.frame(pcoa_vectors)
+pcoa_vectors$magnitude <- pcoa_magnitude
+pcoa_vectors <- pcoa_vectors[order(-pcoa_vectors$magnitude),]
+pcoa_vectors <- subset(pcoa_vectors, magnitude >= 1.484914)
+
+
+
+
+# scores() choices= indicates which axes are to be selected, make sure to specify the scaling if its different than 2 
+arrows(0, 0, pcoa_vectors[,1], pcoa_vectors[,2], length=0, lty=1, col='red')
+
+
+summary(pca_mod)
+screeplot(pca_mod) 
+
+
+
+library(stats)
+fit <- prcomp(flux_samples)
+biplot(fit, scaling=3, type=c('text','points'))
+
+
+
+library(FactoMineR)
+res.pca <- PCA(flux_samples, graph=FALSE)
+
+
+
+
+
+
+
+
+
+

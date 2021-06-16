@@ -111,7 +111,7 @@ par(mar=c(3,5,1,1), mgp=c(1.8, 0.6, 0), new=FALSE, xpd=FALSE, lwd=2, las=1, cex.
 dotchart(rf_rxns$mda,  labels=rf_rxns$id, xlab='Mean Decrease Accuracy (%)', xlim=c(0,xmax),  
          pch=16, lwd=1.7, xaxs='i', pt.cex=0.1, cex=0.8)
 points(x=rf_rxns$mda, y=c(1:nrow(rf_rxns)), pch=21, cex=1.4, bg='red')
-legend('bottomright', legend='MDA >= 1.0', pt.cex=0, bg='white')
+#legend('bottomright', legend='MDA >= 1.0', pt.cex=0, bg='white')
 par(xpd=TRUE)
 lab_pos <- -(xmax*0.45)
 text(x=lab_pos, y=nrow(rf_rxns)+1, 'B', cex=1.2, font=2)
@@ -139,8 +139,10 @@ flux_x <- (abs(max(flux_nmds$MDS1)) - abs(min(flux_nmds$MDS1))) / 2
 flux_y <- (abs(max(flux_nmds$MDS2)) - abs(min(flux_nmds$MDS2))) / 2
 flux_nmds$MDS1 <- flux_nmds$MDS1 - flux_x
 flux_nmds$MDS2 <- flux_nmds$MDS2 - flux_y
-flux_x <- max(abs(max(flux_nmds$MDS1)), abs(min(flux_nmds$MDS1))) + 0.01
-flux_y <- max(abs(max(flux_nmds$MDS2)), abs(min(flux_nmds$MDS2))) + 0.01
+flux_x <- max(abs(max(flux_nmds$MDS1)), abs(min(flux_nmds$MDS1))) + 0.05
+flux_x <- round(flux_x, 1)
+flux_y <- max(abs(max(flux_nmds$MDS2)), abs(min(flux_nmds$MDS2))) + 0.05
+flux_y <- round(flux_y, 1)
 
 flux_nmds <- merge(metadata, flux_nmds, by='row.names')
 rownames(flux_nmds) <- flux_nmds$Row.names
@@ -155,21 +157,25 @@ library(vioplot)
 pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_2.pdf', width=6, height=3)
 layout(matrix(c(1,1,2,3), nrow=1, ncol=4))
 
-par(mar=c(3.5,3.5,0.5,0.5), las=1, mgp=c(2.2,0.7,0), lwd=2, xaxt='l')
+par(mar=c(3.5,3.5,0.5,0.5), las=1, mgp=c(2.2,0.7,0), lwd=2)
 plot(x=flux_nmds$MDS1, y=flux_nmds$MDS2, xlim=c(-flux_x,flux_x), ylim=c(-flux_y, flux_y),
-     xlab='NMDS Axis 1', ylab='NMDS Axis 2', pch=19, cex.lab=1.1, cex=0, cex.axis=0.9)
+     xlab='NMDS Axis 1', ylab='NMDS Axis 2', pch=19, cex.lab=1.1, cex=0, xaxt='n', yaxt='n')
+axis(side=1, at=seq(-flux_x,flux_x,flux_x/2), cex.axis=0.8, lwd=2)
+axis(side=2, at=seq(-flux_y,flux_y,flux_y/2), cex.axis=0.8, lwd=2)
 points(x=laboratory_nmds_points$MDS1, y=laboratory_nmds_points$MDS2, bg=alpha('darkcyan',0.8), pch=21, cex=1.7)
 points(x=clinical_nmds_points$MDS1, y=clinical_nmds_points$MDS2, bg=alpha('white',0.8), pch=21, cex=1.7)
 legend('topleft', legend=c('Clinical isolate','Laboratory strain'), bg='white',
        pt.bg=c('white', 'darkcyan'), pch=21, pt.cex=1.6, cex=1, box.lwd=2)
 legend('bottomleft', legend=as.expression(bquote(paste(italic('p'),'-value = 0.001 ***'))), cex=0.9, bty='n')
 par(xpd=TRUE)
-text(x=-0.5, y=0.25, 'A', cex=1.2, font=2)
+text(x=-0.56, y=0.31, 'A', cex=1.2, font=2)
 par(xpd=FALSE)
 
-par(mar=c(2.8,3,1.7,0.5), xpd=FALSE, las=1, mgp=c(1.8,0.7,0), lwd=2, xaxt='n')
+par(mar=c(2.6,3,1.7,0.5), xpd=FALSE, las=1, mgp=c(1.6,0.7,0), lwd=2, xaxt='n')
 vioplot(clinic_valta, lab_valta, col=c('white', 'darkcyan'), main='Valine transaminase (VALTA)', cex.main=0.8,
-        ylim=c(0, 20), ylab='Context-specific Reaction Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9)
+        ylim=c(0, 20), ylab='Context-specific Absolute Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9, yaxt='n')
+axis(side=2, at=seq(0,20,5), cex.axis=0.8, lwd=2)
+box()
 segments(x0=1, y0=17, x1=2)
 text(x=1.5, y=17.7, '***', font=2, cex=2)
 par(xpd=TRUE)
@@ -178,7 +184,9 @@ text(x=-0.2, y=20.8, 'B', cex=1.2, font=2)
 par(xpd=FALSE)
 
 vioplot(clinic_argtex, lab_argtex, col=c('white', 'darkcyan'), main='Argenine transport (ARGtex)', cex.main=0.8,
-        ylim=c(0, 5), ylab='Context-specific Reaction Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9)
+        ylim=c(0, 5), ylab='Context-specific Absolute Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9, yaxt='n')
+axis(side=2, at=seq(0,5,1), cex.axis=0.8, lwd=2)
+box()
 segments(x0=1, y0=4, x1=2)
 text(x=1.5, y=4.2, '*', font=2, cex=2)
 par(xpd=TRUE)
