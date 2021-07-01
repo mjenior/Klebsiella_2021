@@ -54,6 +54,17 @@ clinical_transcription <- as.data.frame(t(clinical_transcription))
 laboratory_transcription <- as.data.frame(t(laboratory_transcription))
 rm(sub_samp, sub_samp1, sub_samp2, x)
 
+# Calculate median values and save
+clinical_median <- as.vector(apply(clinical_transcription, 2, median))
+clinical_median <- as.data.frame(cbind(colnames(clinical_transcription), clinical_median))
+write.table(clinical_median, file='~/Desktop/active_projects/klebsiella/data/transcript_mapping/clinical_median_transript.tsv', 
+            quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE)
+laboratory_median <- as.vector(apply(laboratory_transcription, 2, median))
+laboratory_median <- as.data.frame(cbind(colnames(laboratory_transcription), laboratory_median))
+write.table(laboratory_median, file='~/Desktop/active_projects/klebsiella/data/transcript_mapping/laboratory_median_transript.tsv', 
+            quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE)
+rm(clinical_median, laboratory_median)
+
 # Add gene names and aggregate
 #gene_dict <- read.delim('~/Desktop/active_projects/klebsiella/genomes/Kpneumoniae_mgh78578.genes.tsv', sep='\t', header=TRUE)
 #clinical_transcription <- merge(gene_dict, clinical_transcription, by.x='gene', by.y='row.names')

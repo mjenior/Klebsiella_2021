@@ -1,4 +1,5 @@
 
+# Read in data
 metadata <- read.delim('~/Desktop/repos/Klebsiella_2021/data/metadata.tsv', sep='\t', header=TRUE)
 metadata$study <- NULL
 srr_files <- c('SRR1720484','SRR1720485','SRR1720486','SRR1720487','SRR1720488','SRR1720489',
@@ -51,29 +52,35 @@ sub_sample <- sample(1:nrow(lab_samples), 200, replace=FALSE)
 lab_samples <- lab_samples[sub_sample,]
 sub_sample <- sample(1:nrow(clinic_samples), 200, replace=FALSE)
 clinic_samples <- clinic_samples[sub_sample,]
+flux_samples <- as.data.frame(rbind(lab_samples, clinic_samples))
+sample_names <- rownames(flux_samples)
 
 # Merge data for supervised learning
-lab_samples$condition <- 1
-clinic_samples$condition <- 0
-flux_samples <- as.data.frame(rbind(lab_samples, clinic_samples))
-flux_samples$condition <- as.factor(flux_samples$condition)
+#lab_samples$condition <- 1
+#clinic_samples$condition <- 0
+#flux_samples <- as.data.frame(rbind(lab_samples, clinic_samples))
+#flux_samples$condition <- as.factor(flux_samples$condition)
 
 # Run AUCRF and obtain feature lists
-library(AUCRF)
-set.seed(906801)
-all_aucrf <- AUCRF(condition ~ ., data=flux_samples, pdel=0, k0=10)
-#print(all_aucrf)
+#library(AUCRF)
+#set.seed(906801)
+#Kopt <- 15
+#all_aucrf <- AUCRF(condition ~ ., data=flux_samples, pdel=0, k0=Kopt)
+#plot(all_aucrf)
 
 # Assemble feature table
-top_rxns_importance <- all_aucrf$ranking[1:all_aucrf$Kopt]
-rf_rxns <- as.data.frame(cbind(labels(top_rxns_importance), as.vector(top_rxns_importance)))
-colnames(rf_rxns) <- c('id','mda')
-rf_rxns$mda <- as.numeric(as.character(rf_rxns$mda))
-rf_rxns <- rf_rxns[order(rf_rxns$mda),]
-rf_rxns <- subset(rf_rxns, mda >= 1)
+#top_rxns_importance <- all_aucrf$ranking[1:20]
+#rf_rxns <- as.data.frame(cbind(labels(top_rxns_importance), as.vector(top_rxns_importance)))
+#colnames(rf_rxns) <- c('id','mda')
+#rf_rxns$mda <- as.numeric(as.character(rf_rxns$mda))
+#rf_rxns <- rf_rxns[order(rf_rxns$mda),]
 #write.table(rf_rxns, file='~/Desktop/repos/Klebsiella_2021/data/lab_clinic_mda.tsv', 
 #            quote=FALSE, sep='\t', row.names=FALSE, col.names=TRUE)
-#rf_rxns <- read.delim('~/Desktop/repos/Klebsiella_2021/data/lab_clinic_mda.tsv', sep='\t', header=TRUE)
+
+# Machine learning results
+rf_rxns <- read.delim('~/Desktop/repos/Klebsiella_2021/data/lab_clinic_mda.tsv', sep='\t', header=TRUE)
+rf_rxns$name <- gsub('_', ' ', rf_rxns$name)
+rf_rxns <- rf_rxns[order(rf_rxns$mda),]
 
 big_wilcox <- function(group1, group2) {
   pvals <- c()
@@ -87,41 +94,18 @@ big_wilcox <- function(group1, group2) {
   return(pval)
 }
 
+# Test specific reactions
 lab_valta <- abs(lab_samples[,'VALTA'])
 clinic_valta <- abs(clinic_samples[,'VALTA'])
 valta_pval <- big_wilcox(lab_valta, clinic_valta)
-
 lab_argtex <- abs(lab_samples[,'ARGtex'])
 clinic_argtex <- abs(clinic_samples[,'ARGtex'])
 argtex_pval <- big_wilcox(lab_argtex, clinic_argtex)
 
-# Generate figure
-pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_S1.pdf', width=8, height=4)
-layout(matrix(c(1,2), nrow=1, ncol=2))
-
-par(mar=c(3.5,3.5,1,1), mgp=c(2.2, 0.6, 0), new=FALSE, xpd=FALSE, lwd=2, las=1, lwd.tick=2)
-plot(all_aucrf, xlim=c(0,250), ylim=c(0.99,1.0), cex.axis=0.7, pch=1)
-box()
-par(xpd=TRUE)
-text(x=-60, y=1.0005, 'A', cex=1.2, font=2)
-par(xpd=FALSE)
-
-xmax <- max(rf_rxns$mda) * 1.2
-par(mar=c(3,5,1,1), mgp=c(1.8, 0.6, 0), new=FALSE, xpd=FALSE, lwd=2, las=1, cex.axis=0.8)
-dotchart(rf_rxns$mda,  labels=rf_rxns$id, xlab='Mean Decrease Accuracy (%)', xlim=c(0,xmax),  
-         pch=16, lwd=1.7, xaxs='i', pt.cex=0.1, cex=0.8)
-points(x=rf_rxns$mda, y=c(1:nrow(rf_rxns)), pch=21, cex=1.4, bg='red')
-#legend('bottomright', legend='MDA >= 1.0', pt.cex=0, bg='white')
-par(xpd=TRUE)
-lab_pos <- -(xmax*0.45)
-text(x=lab_pos, y=nrow(rf_rxns)+1, 'B', cex=1.2, font=2)
-par(xpd=FALSE)
-
-dev.off()
-
-
 # Subset to informative features
 flux_samples <- flux_samples[, rf_rxns$id]
+flux_samples <- as.data.frame(sapply(flux_samples, as.numeric))
+rownames(flux_samples) <- sample_names
 
 # Ordination analysis
 library(vegan)
@@ -134,6 +118,7 @@ nmds_pval <- adonis(flux_dist ~ type, data=test, perm=999, method='bray')
 nmds_pval <- nmds_pval$aov.tab[[6]][1]
 nmds_pval <- as.character(round(nmds_pval, 3))
 
+# Center figure
 flux_nmds <- as.data.frame(metaMDS(flux_dist, k=2, trymax=25)$points)
 flux_x <- (abs(max(flux_nmds$MDS1)) - abs(min(flux_nmds$MDS1))) / 2
 flux_y <- (abs(max(flux_nmds$MDS2)) - abs(min(flux_nmds$MDS2))) / 2
@@ -144,6 +129,7 @@ flux_x <- round(flux_x, 1)
 flux_y <- max(abs(max(flux_nmds$MDS2)), abs(min(flux_nmds$MDS2))) + 0.05
 flux_y <- round(flux_y, 1)
 
+# Seperate points
 flux_nmds <- merge(metadata, flux_nmds, by='row.names')
 rownames(flux_nmds) <- flux_nmds$Row.names
 flux_nmds$Row.names <- NULL
@@ -154,10 +140,25 @@ laboratory_nmds_points <- subset(flux_nmds, type == 'laboratory')
 # Generate figure
 library(scales)
 library(vioplot)
-pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_2.pdf', width=6, height=3)
-layout(matrix(c(1,1,2,3), nrow=1, ncol=4))
+pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_2.pdf', width=5, height=6)
 
-par(mar=c(3.5,3.5,0.5,0.5), las=1, mgp=c(2.2,0.7,0), lwd=2)
+layout(matrix(c(1,2,
+                1,2,
+                3,4), nrow=3, ncol=2, byrow=TRUE))
+
+xmax <- round(max(rf_rxns$mda) * 1.2)
+par(mar=c(2.5, 1.5, 1, 1), mgp=c(1.3, 0.4, 0), xpd=FALSE, lwd=2)
+dotchart(rf_rxns$mda,  xlab='Mean Decrease Accuracy (%)', xlim=c(0,22),  
+         pch=16, lwd=1.7, xaxs='i', pt.cex=0.1, cex=0.9, xaxt='n', cex.lab=0.9)
+axis(1, at=seq(0,20,5), lwd=2, cex=0.7)
+text(x=-0.5, y=seq(1.4,15.4,1), labels=rf_rxns$name, cex=1, pos=4)
+points(x=rf_rxns$mda, y=c(1:15), pch=21, cex=1.6, bg='darkorange3')
+legend('bottomright', legend=c('AUCopt = 0.997','Kopt = 15'), pt.cex=0, bty='n', cex=0.8)
+par(xpd=TRUE)
+text(x=-3, y=16, 'A', cex=1.2, font=2)
+par(xpd=FALSE)
+
+par(mar=c(3.5,3.5,1,1), las=1, mgp=c(2.2,0.7,0), lwd=2)
 plot(x=flux_nmds$MDS1, y=flux_nmds$MDS2, xlim=c(-flux_x,flux_x), ylim=c(-flux_y, flux_y),
      xlab='NMDS Axis 1', ylab='NMDS Axis 2', pch=19, cex.lab=1.1, cex=0, xaxt='n', yaxt='n')
 axis(side=1, at=seq(-flux_x,flux_x,flux_x/2), cex.axis=0.8, lwd=2)
@@ -166,32 +167,32 @@ points(x=laboratory_nmds_points$MDS1, y=laboratory_nmds_points$MDS2, bg=alpha('d
 points(x=clinical_nmds_points$MDS1, y=clinical_nmds_points$MDS2, bg=alpha('white',0.8), pch=21, cex=1.7)
 legend('topleft', legend=c('Clinical isolate','Laboratory strain'), bg='white',
        pt.bg=c('white', 'darkcyan'), pch=21, pt.cex=1.6, cex=1, box.lwd=2)
-legend('bottomleft', legend=as.expression(bquote(paste(italic('p'),'-value = 0.001 ***'))), cex=0.9, bty='n')
+legend('bottomleft', legend=as.expression(bquote(paste(italic('p'),'-value = 0.001 ***'))), cex=1, bty='n')
 par(xpd=TRUE)
-text(x=-0.56, y=0.31, 'A', cex=1.2, font=2)
+text(x=-0.6, y=0.32, 'B', cex=1.2, font=2)
 par(xpd=FALSE)
 
-par(mar=c(2.6,3,1.7,0.5), xpd=FALSE, las=1, mgp=c(1.6,0.7,0), lwd=2, xaxt='n')
-vioplot(clinic_valta, lab_valta, col=c('white', 'darkcyan'), main='Valine transaminase (VALTA)', cex.main=0.8,
-        ylim=c(0, 20), ylab='Context-specific Absolute Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9, yaxt='n')
+par(mar=c(2.6,3.8,1.7,1), xpd=FALSE, las=1, mgp=c(1.6,0.7,0), lwd=2, xaxt='n')
+vioplot(clinic_valta, lab_valta, col=c('white', 'darkcyan'), main='Valine transaminase', cex.main=1.1,
+        ylim=c(0, 20), ylab='Absolute Reaction Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9, yaxt='n')
 axis(side=2, at=seq(0,20,5), cex.axis=0.8, lwd=2)
 box()
 segments(x0=1, y0=17, x1=2)
-text(x=1.5, y=17.7, '***', font=2, cex=2)
+text(x=1.5, y=17.9, '***', font=2, cex=2)
 par(xpd=TRUE)
-text(x=c(1,2), y=-1.4, labels=c('Clinical\nisolate','Laboratory\nstrain'), cex=0.9)
-text(x=-0.2, y=20.8, 'B', cex=1.2, font=2)
+text(x=c(1,2), y=-2.2, labels=c('Clinical\nisolate','Laboratory\nstrain'), cex=1)
+text(x=-0.05, y=20.8, 'C', cex=1.2, font=2)
 par(xpd=FALSE)
 
-vioplot(clinic_argtex, lab_argtex, col=c('white', 'darkcyan'), main='Argenine transport (ARGtex)', cex.main=0.8,
-        ylim=c(0, 5), ylab='Context-specific Absolute Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9, yaxt='n')
+vioplot(clinic_argtex, lab_argtex, col=c('white', 'darkcyan'), main='Argenine transport', cex.main=1.1,
+        ylim=c(0, 5), ylab='Absolute Reaction Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9, yaxt='n')
 axis(side=2, at=seq(0,5,1), cex.axis=0.8, lwd=2)
 box()
-segments(x0=1, y0=4, x1=2)
-text(x=1.5, y=4.2, '*', font=2, cex=2)
+segments(x0=1, y0=4.2, x1=2)
+text(x=1.5, y=4.4, '*', font=2, cex=2)
 par(xpd=TRUE)
-text(x=c(1,2), y=-0.35, labels=c('Clinical\nisolate','Laboratory\nstrain'), cex=0.9)
-text(x=-0.1, y=5.2, 'C', cex=1.2, font=2)
+text(x=c(1,2), y=-0.6, labels=c('Clinical\nisolate','Laboratory\nstrain'), cex=1)
+text(x=-0.05, y=5.2, 'D', cex=1.2, font=2)
 par(xpd=FALSE)
 
 dev.off()
