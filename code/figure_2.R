@@ -178,18 +178,18 @@ vioplot(clinic_valta, lab_valta, col=c('white', 'darkcyan'), main='Valine transa
 axis(side=2, at=seq(0,20,5), cex.axis=0.8, lwd=2)
 box()
 segments(x0=1, y0=17, x1=2)
-text(x=1.5, y=17.9, '***', font=2, cex=2)
+text(x=1.5, y=18.2, '***', font=2, cex=1.5)
 par(xpd=TRUE)
 text(x=c(1,2), y=-2.2, labels=c('Clinical\nisolate','Laboratory\nstrain'), cex=1)
 text(x=-0.05, y=20.8, 'C', cex=1.2, font=2)
 par(xpd=FALSE)
 
-vioplot(clinic_argtex, lab_argtex, col=c('white', 'darkcyan'), main='Argenine transport', cex.main=1.1,
+vioplot(clinic_argtex, lab_argtex, col=c('white', 'darkcyan'), main='Arginine transport', cex.main=1.1,
         ylim=c(0, 5), ylab='Absolute Reaction Flux', lwd=1.7, drawRect=FALSE, yaxs='i', cex.axis=0.9, yaxt='n')
 axis(side=2, at=seq(0,5,1), cex.axis=0.8, lwd=2)
 box()
 segments(x0=1, y0=4.2, x1=2)
-text(x=1.5, y=4.4, '*', font=2, cex=2)
+text(x=1.5, y=4.5, '*', font=2, cex=1.5)
 par(xpd=TRUE)
 text(x=c(1,2), y=-0.6, labels=c('Clinical\nisolate','Laboratory\nstrain'), cex=1)
 text(x=-0.05, y=5.2, 'D', cex=1.2, font=2)
