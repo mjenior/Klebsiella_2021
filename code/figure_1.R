@@ -154,11 +154,66 @@ quick_stripchart <- function(gene, name='') {
 }
 
 
+quick_barchart <- function(gene, name='', panel='') {
+  clinical <- as.vector(clinical_transcription[,gene])
+  laboratory <- as.vector(laboratory_transcription[,gene])
+  pval <- wilcox.test(clinical, laboratory, exact=FALSE)$p.value
+  
+  clinical <- log2(clinical + 1)
+  clinical_median <- median(clinical)
+  clinical_q25 <- as.numeric(quantile(clinical, 0.25))
+  clinical_q75 <- as.numeric(quantile(clinical, 0.75))
+  laboratory <- log2(laboratory + 1)
+  laboratory_median <- median(laboratory)
+  laboratory_q25 <- as.numeric(quantile(laboratory, 0.25))
+  laboratory_q75 <- as.numeric(quantile(laboratory, 0.75))
+  
+  ymax <- round(max(c(clinical, laboratory)) * 1.2)
+  yjump <- ymax / 5
+  lab_dist <- -(ymax * 0.18)
+  sig_pos <- (ymax + lab_dist) * 1.05
+  name <- paste0(name, '\n(', gene, ')')
+  panel_lab <- ymax * 1.15
+  
+  par(mar=c(2.5,3,2,1), xpd=FALSE, las=1, mgp=c(1.9,0.8,0), lwd=1.5, xaxt='n')
+  barplot(c(clinical_median, laboratory_median), xlim=c(0,2.6), ylim=c(0,ymax), ylab='Transcript (Log2)', 
+          col=c('white','darkcyan'), cex.axis=0.7, yaxt='n', cex.lab=0.7, main=name, cex.main=0.6)
+  axis(side=2, at=seq(0,ymax,yjump), cex.axis=0.6, lwd=1.5)
+  box()
+  if (clinical_median != 0) {
+    segments(x0=0.7, y0=clinical_q25, y1=clinical_q75)
+    segments(x0=0.9, y0=clinical_q25, x1=0.5)
+    segments(x0=0.9, y0=clinical_q75, x1=0.5)
+  }
+  if (laboratory_median != 0) {
+    segments(x0=1.9, y0=laboratory_q25, y1=laboratory_q75)
+    segments(x0=2.1, y0=laboratory_q25, x1=1.7)
+    segments(x0=2.1, y0=laboratory_q75, x1=1.7)
+  }
+  par(xpd=TRUE)
+  text(x=c(0.7,1.9), y=lab_dist, labels=c('Clinical\nisolates','Laboratory\nstrains'), cex=0.8)
+  text(x=-0.85, y=panel_lab, font=2, labels=panel, cex=1.1)
+  par(xpd=FALSE)
+  
+  
+  if (pval < 0.001) {
+    segments(x0=0.7, x1=1.9, y0=sig_pos)
+    text(x=1.3, y=sig_pos*1.08, '***', cex=1.3, font=2)
+    pval <- 1
+  }
+  if (pval <= 0.01) {
+    segments(x0=0.7, x1=1.9, y0=sig_pos)
+    text(x=1.3, y=sig_pos*1.08, '**', cex=1.3, font=2)
+    pval <- 1
+  }
+  if (pval <= 0.05) {
+    segments(x0=0.7, x1=1.9, y0=sig_pos)
+    text(x=1.3, y=sig_pos*1.08, '*', cex=1.3, font=2)
+    pval <- 1
+  }
+  }
 
-
-
-
-pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_1.pdf', width=6, height=6)
+pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_1A.pdf', width=8, height=6)
 EnhancedVolcano(summ_table,
                 title = 'Laboratory versus Clinical isolates',
                 subtitle = '',
@@ -170,42 +225,44 @@ EnhancedVolcano(summ_table,
                 ylim = c(0,10),
                 xlab = bquote(~Log[2]~'fold change'),
                 pCutoff = 0.05,
-                FCcutoff = 2.0,
+                FCcutoff = 2.5,
                 pointSize = 3.0,
-                selectLab = c('KPN_03340','KPN_04188','KPN_00795','KPN_00796','KPN_pKPN4p07058','KPN_04433','KPN_03160', # laboratory
-                              'KPN_03279','KPN_00656','KPN_03976','KPN_02178','KPN_03348'), # clinical
-                labSize = 2,
+                selectLab = c('KPN_04433','KPN_00795','KPN_pKPN4p07058','KPN_03976','KPN_03279','KPN_00656','KPN_03160'),
+                labSize = 3,
                 labCol = 'black',
                 labFace = 'bold',
                 col = c('black', 'chartreuse4', 'blue4', 'firebrick'),
                 legendLabSize = 10,
                 legendIconSize = 4.0,
                 colAlpha = 4/5,
-                drawConnectors = TRUE,
+                drawConnectors = FALSE,
                 colConnectors = 'black') + coord_flip()
 dev.off()
 
 
-# Stripcharts for genes of interest
-quick_stripchart('KPN_03340')
-quick_stripchart('KPN_04188')
-quick_stripchart('KPN_00795')
-quick_stripchart('KPN_00796')
-quick_stripchart('KPN_pKPN4p07058')
-quick_stripchart('KPN_04433')
-quick_stripchart('KPN_03160')
+# Barcharts for genes of interest
+pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_1B-H.pdf', width=8, height=4.5)
+layout(matrix(c(1,1,1,1,2,
+                1,1,1,1,3,
+                4,5,6,7,8), nrow=3, ncol=5, byrow=TRUE))
+par(mar=c(0,0,0,0), xpd=TRUE)
+plot(0, type='n', xlim=c(0,5), ylim=c(0,5), xlab='', ylab='', axes=FALSE)
+text(x=-0.1, y=4.9, font=2, labels='A', cex=1.1)
+
+quick_barchart('KPN_04433', 'Putative stress-response protein', 'B')
+quick_barchart('KPN_00795', 'hutC: Transcription Factor', 'C')
+quick_barchart('KPN_03160', '5CAI: Putative lipoprotein', 'D')
+quick_barchart('KPN_pKPN4p07058', 'Aminoglycoside N-acetyltransferase', 'E')
+quick_barchart('KPN_03279', 'mrkA: Type-3 fimbriae', 'F')
+quick_barchart('KPN_00656', 'cspA: Cold shock protein', 'G')
+quick_barchart('KPN_03976', 'rpmG: 50S ribosomal protein L33', 'H')
+
+dev.off()
 
 
 
 
-quick_stripchart('KPN_03279')
-quick_stripchart('KPN_00656')
-quick_stripchart('KPN_03976')
-quick_stripchart('KPN_02178')
-quick_stripchart('KPN_03348')
 
-
-
-
-
+selectLab = c('KPN_03340','KPN_04188','KPN_00795','KPN_00796','KPN_pKPN4p07058','KPN_04433','KPN_03160', # laboratory
+              'KPN_03279','KPN_00656','KPN_03976','KPN_02178','KPN_03348') # clinical
 
