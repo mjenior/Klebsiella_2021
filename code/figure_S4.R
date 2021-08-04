@@ -86,14 +86,14 @@ rf_results <- read.delim('~/Desktop/repos/Klebsiella_2021/data/AA_RF_results.tsv
 rf_results <- rf_results[order(rf_results$mda),] 
 
 
-pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_S4.pdf', width=3.5, height=5)
+pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_S4.pdf', width=2.5, height=4)
 par(mar=c(3, 1, 1.5, 1), mgp=c(1.4, 0.5, 0), xpd=FALSE, lwd=1.7)
-dotchart(rf_results$mda, bg='gray49', xlim=c(0,50), main='Exchange Reactions', cex.main=1.1,
+dotchart(rf_results$mda, bg='gray49', xlim=c(0,50), main='Amino Acid Exchanges', cex.main=1.1,
          pch=21, lwd=1.7, pt.cex=1.2, cex=0.8, xaxt='n')
 axis(side=1, at=seq(0,50,10), cex.axis=0.8, lwd=1.7)
-text(x=-1, y=seq(1.4,14.4,1), labels=rf_results$substrate, pos=4)
+text(x=-1, y=seq(1.4,14.4,1), labels=rf_results$substrate, pos=4, cex=0.9)
 mtext('Mean Decrease Accuracy (%)', side=1, padj=2.5, cex=0.7)
-legend('bottomright', legend='OOB-AUCopt = 1.0', bty='n', pt.cex=0, cex=0.8)
+legend('bottomright', legend='OOB-AUCopt = 1.0', bty='n', pt.cex=0, cex=0.7)
 dev.off()
 
 
@@ -105,40 +105,5 @@ laboratory_leucine <- laboratory_core$EX_leu__L_e
 laboratory_valine <- laboratory_core$EX_val__L_e
 laboratory_arginine <- laboratory_core$EX_arg__L_e	
 
-
-
-library(vioplot)
-#pdf(file='~/Desktop/repos/Klebsiella_2021/results/biomass.pdf', width=2.5, height=5)
-par(mar=c(2,3,1,1), xpd=FALSE, las=1, mgp=c(1.8,0.7,0), lwd=1.7)
-vioplot(clinical_leucine, laboratory_leucine, col=c('white', 'darkcyan'), 
-        ylim=c(-1, 1), ylab='Sampled Biomass Flux', lwd=1.7, drawRect=FALSE, yaxs='i', xaxt='n')
-segments(x0=1, y0=2.7, x1=2)
-text(x=1.5, y=2.8, '***', font=2, cex=1.5)
-par(xpd=TRUE)
-text(x=c(1,2), y=-0.45, labels=c('Laboratory','Clinical'), cex=0.9)
-text(x=-0.1, y=3, 'A', font=2, cex=1.2)
-par(xpd=FALSE)
-
-
-par(mar=c(2,3,1,1), xpd=FALSE, las=1, mgp=c(1.8,0.7,0), lwd=1.7)
-vioplot(clinical_valine, laboratory_valine, col=c('white', 'darkcyan'), 
-        ylim=c(-15, 15), ylab='Sampled Biomass Flux', lwd=1.7, drawRect=FALSE, yaxs='i', xaxt='n')
-segments(x0=1, y0=2.7, x1=2)
-text(x=1.5, y=2.8, '***', font=2, cex=1.5)
-par(xpd=TRUE)
-text(x=c(1,2), y=-0.45, labels=c('Laboratory','Clinical'), cex=0.9)
-text(x=-0.1, y=3, 'A', font=2, cex=1.2)
-par(xpd=FALSE)
-
-
-par(mar=c(2,3,1,1), xpd=FALSE, las=1, mgp=c(1.8,0.7,0), lwd=1.7)
-vioplot(clinical_arginine, laboratory_arginine, col=c('white', 'darkcyan'), 
-        ylim=c(-15, 15), ylab='Sampled Biomass Flux', lwd=1.7, drawRect=FALSE, yaxs='i', xaxt='n')
-segments(x0=1, y0=2.7, x1=2)
-text(x=1.5, y=2.8, '***', font=2, cex=1.5)
-par(xpd=TRUE)
-text(x=c(1,2), y=-0.45, labels=c('Laboratory','Clinical'), cex=0.9)
-text(x=-0.1, y=3, 'A', font=2, cex=1.2)
-par(xpd=FALSE)
 
 

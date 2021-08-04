@@ -84,7 +84,7 @@ summ_table <- col_t_welch(laboratory_transcription, clinical_transcription,
 summ_table$p.corr <- p.adjust(summ_table$pvalue, method='BH')
 summ_table$FoldChange <- summ_table$mean.x/ summ_table$mean.y
 summ_table$log2.Fold.Change <- as.numeric(log2(summ_table$FoldChange))
-write.table(summ_table, file='~/Desktop/active_projects/klebsiella/data/transcript_mapping/transript_summary_stats.tsv', 
+write.table(summ_table, file='~/Desktop/repos/Klebsiella_2021/results/Table_S1.tsv', 
             quote=FALSE, sep='\t', row.names=TRUE, col.names=TRUE)
 
 # Add gene names and aggregate
@@ -177,7 +177,7 @@ quick_barchart <- function(gene, name='', panel='') {
   
   par(mar=c(2.5,3,2,1), xpd=FALSE, las=1, mgp=c(1.9,0.8,0), lwd=1.5, xaxt='n')
   barplot(c(clinical_median, laboratory_median), xlim=c(0,2.6), ylim=c(0,ymax), ylab='Transcript (Log2)', 
-          col=c('white','darkcyan'), cex.axis=0.7, yaxt='n', cex.lab=0.7, main=name, cex.main=0.6)
+          col=c('#B13AED','#76EEC6'), cex.axis=0.7, yaxt='n', cex.lab=0.7, main=name, cex.main=0.6)
   axis(side=2, at=seq(0,ymax,yjump), cex.axis=0.6, lwd=1.5)
   box()
   if (clinical_median != 0) {
