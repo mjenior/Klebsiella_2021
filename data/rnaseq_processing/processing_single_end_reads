@@ -1,0 +1,31 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=16
+#SBATCH -t 20:00:00
+#SBATCH --mem=150000
+#SBATCH --account=CSBLRivanna
+#SBATCH --partition=standard
+
+module load gcc/9.2.0
+module load bowtie2/2.2.9
+module load samtools/1.10
+
+# Quality trim the samples
+/home/med4jn/sickle/sickle se -t sanger -f ${1}.fastq -o ${1}_1.trim.fastq
+
+# Paired reads
+bowtie2 -q --fr -x Klebsiella_genes \
+        -U ${1}_1.trim.fastq \
+        -S ${1}_paired_reads.sam
+samtools view -bS ${1}_paired_reads.sam > ${1}_paired_reads.bam
+samtools sort ${1}_paired_reads.bam -o ${1}_paired_reads.sorted.bam
+rm ${1}_paired_reads.bam ${1}_paired_reads.sam
+
+# Merge alignments then remove duplicates
+samtools sort ${1}_paired_reads.sorted.bam -o ${1}_reads.merge.sorted.bam
+rm ${1}_paired_reads.sorted.bam
+
+# Convert to human-readable format
+samtools idxstats ${1}_reads.merge.sorted.bam > ${1}.mapped.tsv
+# python normIDX.py ${1}.mapped.tsv ${1}.mapped.tsv ${3}
+# rm ${1}_reads.merge.sort.bam
