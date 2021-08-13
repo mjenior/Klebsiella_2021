@@ -105,10 +105,6 @@ row_names_accessory_no = row_names_accessory_no[-1 ,]
 row_names_accessory_yes = c('L-valine transport via diffusion', 'L-valine reversible transport via proton symport')
 
 accessory_yes = accessory_yes[-1 ,]
-accessory_yes = accessory_yes[-1 ,]
-#accessory_yes = accessory_yes[-13 ,]
-#accessory_yes = accessory_yes[-10 ,]
-#accessory_yes = accessory_yes[-3 ,]
 accessory_no = accessory_no[-1 ,]
 
 rownames(accessory_yes) = row_names_accessory_yes
