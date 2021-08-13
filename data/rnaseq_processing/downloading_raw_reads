@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=16
+#SBATCH -t 120:00:00
+#SBATCH --mem=150000
+#SBATCH --account=CSBLRivanna
+#SBATCH --partition=standard
+
+module load sratoolkit/2.10.5
+
+fastq-dump --split-files ${1}
