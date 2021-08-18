@@ -77,6 +77,9 @@ print(all_aucrf)
 top_rxns_importance <- all_aucrf$ranking
 rf_rxns <- as.data.frame(cbind(labels(top_rxns_importance), as.vector(top_rxns_importance)))
 colnames(rf_rxns) <- c('id','mda')
+rf_rxns$mda <- as.numeric(as.character(rf_rxns$mda))
+rf_rxns <- subset(rf_rxns, mda > abs(min(rf_rxns$mda)))
+#rf_rxns <- rf_rxns[order(-rf_rxns$mda),][1:15,]
 rm(all_aucrf, top_rxns_importance)
 #write.table(rf_rxns, file='/home/mjenior/Desktop/repos/Klebsiella_2021/data/AA_RF_results.tsv', 
 #            quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE)

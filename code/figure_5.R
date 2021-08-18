@@ -8,13 +8,24 @@ laboratory <- read.delim(laboratory, sep='\t', header=TRUE, row.names=1)
 laboratory <- as.data.frame(apply(laboratory, 2, as.numeric))
 clinical_VALTA <- clinical$VALTA
 laboratory_VALTA <- laboratory$VALTA
+clinical_glu <- clinical$EX_glu__L_e
+laboratory_glu <- laboratory$EX_glu__L_e
 rm(clinical, laboratory)
 
 clinical <- read.delim('/home/mjenior/Desktop/repos/Klebsiella_2021/data/clinical_dFBA.tsv', sep='\t', header=TRUE)
 laboratory <- read.delim('/home/mjenior/Desktop/repos/Klebsiella_2021/data/laboratory_dFBA.tsv', sep='\t', header=TRUE)
 
-library(vioplot)
+# Curve analysis
 
+
+# Max growth rate
+clinical_maxrate <- round(diff(clinical$biomass)[which.max(diff(clinical$biomass))], digits=3)
+laboratory_maxrate <- round(diff(laboratory$biomass)[which.max(diff(laboratory$biomass))], digits=3)
+# clinical max growth rate = 4659.1
+# laboratory max growth rate = 31.8
+
+
+library(vioplot)
 pdf(file='~/Desktop/repos/Klebsiella_2021/results/Figure_5AB.pdf', width=7, height=5)
 layout(matrix(c(1,2,
                 3,4), nrow=2, ncol=2, byrow=TRUE))
@@ -27,8 +38,8 @@ lines(x=clinical$time, y=clinical$valine, col='gray30', lwd=3)
 lines(x=clinical$time+2.2, y=clinical$biomass, col='#B13AED', lwd=3)
 segments(x0=0, y0=0.1, x1=2.2, col='#B13AED', lwd=3)
 axis(1, at=seq(0,5,1), cex.axis=0.6, lwd=2) # hours
-axis(2, at=seq(0,100,20), cex.axis=0.6, lwd=2) # percent valine
-axis(4, at=seq(0,100,20), cex.axis=0.6, lwd=2) # biomass units...
+axis(2, at=seq(0,100,20), cex.axis=0.6, lwd=2) # valine
+axis(4, at=seq(0,100,20), cex.axis=0.6, lwd=2) # biomass
 box()
 par(xpd=TRUE)
 text(x=2.5, y=-30, font=2, labels='Hours', cex=0.8)
@@ -42,8 +53,8 @@ plot(x=laboratory$time, y=laboratory$valine, type='l', col='white', xlim=c(0,3.5
 lines(x=laboratory$time, y=laboratory$valine, col='gray30', lwd=3)
 lines(x=laboratory$time, y=laboratory$biomass, col='#76EEC6', lwd=3)
 axis(1, at=seq(0,3.5,0.5), cex.axis=0.6, lwd=2) # hours
-axis(2, at=seq(0,100,20), cex.axis=0.6, lwd=2) # percent valine
-axis(4, at=seq(0,100,20), cex.axis=0.6, lwd=2) # biomass units...
+axis(2, at=seq(0,100,20), cex.axis=0.6, lwd=2) # valine
+axis(4, at=seq(0,100,20), cex.axis=0.6, lwd=2) # biomass 
 box()
 par(xpd=TRUE)
 text(x=1.75, y=-30, font=2, labels='Hours', cex=0.8)
@@ -73,6 +84,9 @@ dev.off()
 
 
 
-
-
+vioplot(clinical_glu, laboratory_glu, col=c('#B13AED', '#76EEC6'), xaxt='n', yaxt='n', main='Glutamate exchange',
+        ylim=c(-10, 10), ylab='Sampled Reaction Flux', lwd=1.7, drawRect=FALSE, yaxs='i')
+par(xpd=TRUE)
+text(x=c(1,2), y=-11, labels=c('Clinical','Laboratory'), cex=1.1)
+par(xpd=FALSE)
 

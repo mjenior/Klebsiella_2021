@@ -13,11 +13,11 @@ pval <- round(wilcox.test(clinical_valta, laboratory_valta)$p.value, 4)
 clinical_valta <- log2(clinical_valta)
 laboratory_valta <- log2(laboratory_valta)
 
-pdf(file='~/Desktop/repos/Klebsiella_2021/results/figures/Figure_S5.pdf', width=4, height=5)
+pdf(file='~/Desktop/repos/Klebsiella_2021/results/figures/Figure_S3.pdf', width=4, height=5)
 par(mar=c(3,4,2,1), las=1, mgp=c(2.5,0.7,0), xpd=FALSE, lwd=2)
 plot(0, type='n', ylim=c(0,15), xlim=c(0,2), main='Valine Tranaminase (KPN_04269)',
-     ylab='Transcript Abundance', xlab='', xaxt='n', yaxt='n', cex.lab=1.4)
-axis(2, at=seq(0,15,3), lwd=2, cex.axis=0.7)
+     ylab='Transcript Abundance (Log2)', xlab='', xaxt='n', yaxt='n', cex.lab=1.4)
+axis(2, at=seq(0,15,3), lwd=2, cex.axis=0.9)
 boxplot(clinical_valta, cex=0, lwd=3, at=0.5, col='#B13AED', ylab='', staplewex=0.6, 
         boxwex=1, lty=1, medlwd=3, xaxt='n', yaxt='n', add=TRUE)
 boxplot(laboratory_valta, cex=0, lwd=3, at=1.5, col='#76EEC6', ylab='', staplewex=0.6, 
