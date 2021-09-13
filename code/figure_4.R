@@ -20,21 +20,6 @@ laboratory <- read.delim(laboratory, sep='\t', header=TRUE, row.names=1)
 laboratory <- as.data.frame(apply(laboratory, 2, as.numeric))
 rownames(laboratory) <- paste0('laboratory_', c(1:nrow(laboratory)))
 
-
-median(clinical[,'ILETA'])
-median(laboratory[,'ILETA'])
-
-median(clinical[,'ALATA_L'])
-median(laboratory[,'ALATA_L'])
-
-median(clinical[,'VPAMTr'])
-median(laboratory[,'VPAMTr'])
-
-median(clinical[,'VALTA'])
-median(laboratory[,'VALTA'])
-
-ALATA_L --> VPAMTr --> VALTA
-
 # Create metadata table
 clinical_metadata <- cbind(rownames(clinical), rep('clinical', nrow(clinical)))
 colnames(clinical_metadata) <- c('sample','condition')
@@ -63,6 +48,15 @@ flux_samples <- flux_samples + abs(min(flux_samples))
 # Calculate dissimilarity
 library(vegan)
 flux_dist <- vegdist(flux_samples, method='bray')
+distmat <- as.data.frame(as.matrix(flux_dist))
+write.table(distmat, file='~/Desktop/repos/Klebsiella_2021/data/bray_curtis_all.tsv', quote=FALSE, sep='\t')
+
+# Mean wwithin-group dissimilarity
+flux_groups <- as.factor(c(rep('clinical', nrow(clinical_core)), rep('laboratory', nrow(laboratory_core))))
+meandist(flux_dist, grouping=flux_groups)
+#             clinical  laboratory
+# clinical   0.004 0.006
+# laboratory 0.006 0.001
 
 # Test difference
 flux_samples$condition <- as.factor(metadata$condition)
@@ -88,12 +82,7 @@ laboratory_points <- subset(flux_nmds, condition == 'laboratory')
 clinical_centroids <- aggregate(cbind(clinical_points$MDS1, clinical_points$MDS2)~clinical_points$condition, data=clinical_points, mean)
 laboratory_centroids <- aggregate(cbind(laboratory_points$MDS1, laboratory_points$MDS2)~laboratory_points$condition, data=laboratory_points, mean)
 
-# Mean wwithin-group dissimilarity
-flux_groups <- as.factor(c(rep('clinical', nrow(clinical_core)), rep('laboratory', nrow(laboratory_core))))
-meandist(flux_dist, grouping=flux_groups)
-#             clinical  laboratory
-# clinical   0.004 0.006
-# laboratory 0.006 0.001
+
 
 #----------------------------------------------------------------------#
 
@@ -103,7 +92,6 @@ layout(matrix(c(1,2,2,
                 1,2,2), nrow=2, ncol=3, byrow=TRUE))
 
 library(vioplot)
-#pdf(file='~/Desktop/repos/Klebsiella_2021/results/biomass.pdf', width=2.5, height=5)
 par(mar=c(5,3,1,1), xpd=FALSE, las=1, mgp=c(1.8,0.7,0), lwd=1.7)
 vioplot(clinical_biomass, laboratory_biomass, col=c('#B13AED','#76EEC6'), 
         ylim=c(0, 3), ylab='Sampled Biomass Flux', lwd=1.7, drawRect=FALSE, yaxs='i', yaxt='n')
@@ -117,7 +105,6 @@ text(x=c(0.9,1.9), y=-0.45, labels=c('Clinical','Laboratory'), cex=1.2, srt=45)
 text(x=-0.1, y=3, 'A', font=2, cex=1.2)
 par(xpd=FALSE)
 box()
-#dev.off()
 
 library(scales)
 #pdf(file='~/Desktop/repos/Klebsiella_2021/results/flux_samples_nmds.pdf', width=5.5, height=5)
